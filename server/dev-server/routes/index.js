@@ -14,10 +14,10 @@ router.get('/capabilities', function(req, res, next) {
     let evalRes = new EvaluationReport()
     let obj = {
         "capabilities": [{
-            "id": "XPath-evaluator",
+            "id": "Java-evaluator",
             "features": [{
                 "name": "language",
-                "value": "XPath"
+                "value": "java"
             }, {
                 "name": "version",
                 "value": ".01"
@@ -55,7 +55,6 @@ router.get('/', function(req, res) {
 router.post('/eval', function(req, res, next) {
     let evalReq = new EvaluationReport()
     if (evalReq.setRequest(req.body)) {
-        console.log(evalReq)
         if ('program' in evalReq.request) {
             try {
                 let exerciseObj = new ProgrammingExercise()
@@ -63,7 +62,6 @@ router.post('/eval', function(req, res, next) {
 
                 exerciseObj.loadRemoteExerciseAuthorkit(evalReq.request.learningObject).then(programmingExercise => {
                     try {
-                        let obj = evaluator.XPATH(programmingExercise, evalReq)
                         if (!data.includes(programmingExercise.id)) {
                             data.push(programmingExercise.id)
                             programmingExercise.serialize(path.join(__dirname, "../../public/zip")).then(test => {
@@ -72,10 +70,12 @@ router.post('/eval', function(req, res, next) {
                                 }
                             })
                         }
-                        res.json(obj)
+
+                        evaluator.evalJava(programmingExercise, evalReq)
+                        .then(obj => {;res.json(obj)})
+                        .catch(e => {res.json(e)})
                     } catch (e) {
                         console.log(e)
-
                         res.send(e)
                     }
                 })
@@ -87,8 +87,6 @@ router.post('/eval', function(req, res, next) {
         }
     }
 });
-
-
 
 
 export { router, data };

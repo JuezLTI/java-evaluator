@@ -1,5 +1,5 @@
 {
-    "name": "evaluator",
+    "name": "java-evaluator",
     "version": "0.0.0",
     "private": true,
     "scripts": {
@@ -33,20 +33,21 @@
         "@babel/cli": "^7.15.7",
         "@babel/core": "^7.15.8",
         "@babel/preset-env": "^7.15.8",
+        "babel-polyfill": "^6.26.0",
         "consolidate": "^0.16.0",
         "cookie-parser": "~1.4.4",
         "debug": "~2.6.9",
+        "exec-sh": "~0.4.0",
         "express": "~4.16.1",
         "http-errors": "~1.6.3",
-        "jade": "~1.11.0",
         "morgan": "~1.9.1",
         "nodemon": "^2.0.14",
         "npm-run-all": "^4.1.5",
         "pug": "^3.0.2",
+        "regenerator-runtime": "^0.13.9",
         "rimraf": "^3.0.2",
         "swig": "^1.4.2",
-        "url": "^0.11.0",
-        "xmldom": "^0.6.0",
-        "xpath": "0.0.32"
+        "temp": "~0.9.4",
+        "url": "^0.11.0"
     }
 }

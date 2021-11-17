@@ -10,8 +10,38 @@ const request = require('request');
 
     console.log(eval.setRequest({
         "date": (new Date()).toISOString(),
-        "program": "/bookstore/book/price//text()",
-        "learningObject": "f9d4ce5b-b6b0-47cc-8e05-8d93fc492f00"
+        "program": `package estructuras;
+
+import java.util.Scanner;
+
+public class Estructuras {
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        int nota;
+        Scanner teclado = new Scanner(System.in);
+
+        // Lectura de los numeros por teclado
+        nota = teclado.nextInt();
+
+        if (nota >= 5) {
+            System.out.println("APROBADO");
+        }
+        System.out.println("========");
+        // Lectura de los numeros por teclado
+        nota = teclado.nextInt();
+
+        if (nota >= 5) {
+            System.out.println("APROBADO");
+        }
+        System.out.println("========");
+    }
+
+}
+`,
+        "learningObject": "b8613a8e-1cb5-4eab-98a5-897fc49d3f53"
     }))
 
     console.log("\n" + JSON.stringify(eval.request) + "\n")
