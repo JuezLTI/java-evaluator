@@ -1,3 +1,0 @@
-
-This server has the receives request in PEARL schema format and replies in this format as well.
-You can use /eval to try evaluate XPATH exercises from 

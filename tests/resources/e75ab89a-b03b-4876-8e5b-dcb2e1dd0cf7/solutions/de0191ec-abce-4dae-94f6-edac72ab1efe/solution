@@ -1,1 +1,0 @@
-/bookstore/book/price//text()

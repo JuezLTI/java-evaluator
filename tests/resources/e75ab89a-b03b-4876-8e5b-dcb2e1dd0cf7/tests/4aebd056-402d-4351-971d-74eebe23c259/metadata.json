@@ -1,8 +1,0 @@
-{
-	"id": "4aebd056-402d-4351-971d-74eebe23c259",
-	"arguments": [],
-	"weight": 5,
-	"visible": false,
-	"input": "input1.txt",
-	"output": "output1.txt"
-}
