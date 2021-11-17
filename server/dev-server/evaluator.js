@@ -14,7 +14,7 @@ async function evalJava(programmingExercise, evalReq) {
             "value": "Java"
         }, {
             "name": "version",
-            "value": "1.0"
+            "value": "openjdk 11.0.12"
         }, {
             "name": "engine",
             "value": "https://www.npmjs.com/package/java"
@@ -34,8 +34,7 @@ async function evalJava(programmingExercise, evalReq) {
         let correct_anwsers = []
         for (let metadata of programmingExercise.tests) {
             let input = programmingExercise.tests_contents_in[metadata.id];
-            let teacherNode = null,
-                studentNode = null;
+
             var teacherResult = getOutputFromCode(
                 solution,
                 input
@@ -44,28 +43,19 @@ async function evalJava(programmingExercise, evalReq) {
                 program,
                 input
             )
-            await Promise.all([teacherResult, studentResult])
-            .then(resultArray => {
-                teacherNode = resultArray[0];
-                studentNode = resultArray[1];
-                if (teacherNode != studentNode) {
-                    if ('request' in evalRes)
-                        delete evalRes.request
-                    response.report.compilationErrors = "incorrect java solution"
-                    console.log("1.- evalRes.setReply " + evalRes.setReply(response))
-                } else {
-                    console.log("2.- evalRes.setReply " + evalRes.setReply(response))
-                }
-                return evalRes
-            })
-            .catch(e => {
-                console.log("3.- evalRes.setReply " + evalRes.setReply(e));
-                return evalRes
-            })
+            let [teacherNode, studentNode] = await Promise.all([teacherResult, studentResult])
+            if (teacherNode != studentNode) {
+                if ('request' in evalRes)
+                    delete evalRes.request
+                response.report.compilationErrors = "incorrect java solution"
+                console.log("1.- evalRes.setReply " + evalRes.setReply(response))
+            } else {
+                console.log("2.- evalRes.setReply " + evalRes.setReply(response))
+            }
+            return evalRes
         }
 
     } catch (error) {
-        console.log(error)
         response.report.compilationErrors = JSON.stringify(error)
         console.log("4.- evalRes.setReply " + evalRes.setReply(response))
         return evalRes
@@ -82,7 +72,6 @@ const getOutputFromCode = (answerCode, input) => {
         .then(info => {
               const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', info.path],
                   {
-                    // stdio: ['pipe', process.stdout, process.stderr],
                     timeout: 5000,
                     maxBuffer: 65535
                   });

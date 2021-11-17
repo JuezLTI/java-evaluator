@@ -72,7 +72,7 @@ router.post('/eval', function(req, res, next) {
                         }
 
                         evaluator.evalJava(programmingExercise, evalReq)
-                        .then(obj => {;res.json(obj)})
+                        .then(obj => {console.log(obj);res.json(obj)})
                         .catch(e => {res.json(e)})
                     } catch (e) {
                         console.log(e)
