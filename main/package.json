@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "request": "^2.88.2"
+    "programming-exercise-juezlti": "^1.0.0",
+    "request": "^2.88.2",
+    "uuid": "^8.3.2"
   }
 }
