@@ -1,10 +1,9 @@
-import xpath from 'xpath'
-import { DOMParser } from 'xmldom'
 import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti";
 
-function XPATH(programmingExercise, evalReq) {
+async function evalJava(programmingExercise, evalReq) {
     return new Promise((resolve) => {
-        loadSchemaPEARL().then(() => {
+        loadSchemaPEARL().then(async () => {
+
 
             let evalRes = new EvaluationReport();
             evalRes.setRequest(evalReq.request)
@@ -12,110 +11,123 @@ function XPATH(programmingExercise, evalReq) {
             let response = {}
             response.report = {}
             response.report.capability = {
-                "id": "XPath-evaluator",
+                "id": "Java-evaluator",
                 "features": [{
                     "name": "language",
-                    "value": "XPath"
+                    "value": "Java"
                 }, {
                     "name": "version",
-                    "value": "1.0"
+                    "value": "openjdk 11.0.12"
                 }, {
                     "name": "engine",
-                    "value": "https://www.npmjs.com/package/xpath"
+                    "value": "https://www.npmjs.com/package/java"
                 }]
             }
-
             response.report.exercise = programmingExercise.id
-            response.report.compilationErrors = [];
             try {
 
                 let solution_id = ""
                 for (let solutions of programmingExercise.solutions) {
-                    if (solutions.lang == "xml") {
+                    if (solutions.lang == "java") {
                         solution_id = solutions.id
                         break;
                     }
                 }
                 const solution = programmingExercise.solutions_contents[solution_id]
-                let i = 0;
+                let correct_anwsers = []
                 for (let metadata of programmingExercise.tests) {
-                    let input = new DOMParser().parseFromString(programmingExercise.tests_contents_in[metadata.id]);
-                    let teacherNode = null,
-                        studentNode = null;
+                    let input = programmingExercise.tests_contents_in[metadata.id];
 
-
-                    var teacherResult = xpath.evaluate(
-                        solution, // xpathExpression
-                        input, // contextNode
-                        null, // namespaceResolver
-                        xpath.XPathResult.ANY_TYPE, // resultType
-                        null // result
+                    var teacherResult = getOutputFromCode(
+                        solution,
+                        input
                     )
-                    var studentResult = xpath.evaluate(
-                            program, // xpathExpression
-                            input, // contextNode
-                            null, // namespaceResolver
-                            xpath.XPathResult.ANY_TYPE, // resultType
-                            null // result
-                        )
-                        /*
-        console.log(solution)
-        console.log(program)
-
-        console.log(teacherResult)
-
-        console.log(studentResult)
-            */
-                    if (teacherResult.resultType == 1 || teacherResult.resultType == 2) {
-                        if ("numberValue" in teacherResult)
-                            if (teacherResult.numberValue != studentResult.numberValue) {
-
-                                response.report.compilationErrors.push(`{"${i}":"incorrect xpath expression"}`)
-
-                            }
-                        if ("stringValue:" in teacherResult)
-                            if (teacherResult.stringValue != studentResult.stringValue) {
-                                response.report.compilationErrors.push(`{"${i}":"incorrect xpath expression"}`)
-
-
-                            }
-
-                    } else if (teacherResult.resultType == 4 || teacherResult.resultType == 5) {
-                        teacherNode = teacherResult.iterateNext();
-                        studentNode = studentResult.iterateNext();
-                        console.log("teacher node " + teacherNode)
-                        if (teacherNode == undefined) {
-                            response.report.compilationErrors.push(`{"${i}":"incorrect xpath expression"}`)
-
-                        } else {
-                            while (teacherNode) {
-                                if (teacherNode != studentNode) {
-                                    response.report.compilationErrors.push(`{"${i}":"incorrect xpath expression"}`)
-                                    break;
-                                }
-                                teacherNode = teacherResult.iterateNext();
-                                studentNode = studentResult.iterateNext();
-                            }
-
-                        }
+                    var studentResult = getOutputFromCode(
+                        program,
+                        input
+                    )
+                    let [teacherNode, studentNode] = await Promise.all([teacherResult, studentResult])
+                    if (teacherNode != studentNode) {
+                        if ('request' in evalRes)
+                            delete evalRes.request
+                        response.report.compilationErrors = "incorrect java solution"
+                        console.log("1.- evalRes.setReply " + evalRes.setReply(response))
+                    } else {
+                        console.log("2.- evalRes.setReply " + evalRes.setReply(response))
                     }
-                    i++;
+                    resolve(evalRes)
                 }
 
-                evalRes.setReply(response)
-                resolve(evalRes)
             } catch (error) {
-                console.log(error)
-                response.report.compilationErrors.push("impossibleToEvaluate")
-                evalRes.setReply(response)
+                response.report.compilationErrors = JSON.stringify(error)
+                console.log("4.- evalRes.setReply " + evalRes.setReply(response))
                 resolve(evalRes)
-
             }
         })
     })
+}
 
+
+const getOutputFromCode = (answerCode, input) => {
+    return new Promise((resolve, reject) => {
+        var util = require('util'),
+            execFile = require('child_process').execFile,
+            output = '';
+        createFileFromCode(answerCode)
+            .then(info => {
+                const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', info.path],
+                    {
+                        timeout: 5000,
+                        maxBuffer: 65535
+                    });
+
+                child.stdin.setEncoding = 'utf-8';
+
+                child.stdout.on('data', (data) => {
+                    output += data.toString();
+                });
+
+                // Handle error output
+                child.stderr.on('data', (data) => {
+                    reject(data);
+                });
+                child.stdout.on('end', async function (code) {
+                    resolve(output);
+                });
+
+                process.stdin.pipe(child.stdin);
+                child.stdin.write(input + '\n');
+            })
+            .catch(e => {
+                console.log("error " + e);
+                reject(e);
+            });
+    })
+}
+
+const createFileFromCode = (answerCode) => {
+    return new Promise((resolve, reject) => {
+        var temp = require('temp'),
+            fs = require('fs')
+
+        // Automatically track and cleanup files at exit
+        temp.track();
+
+        // Process the data (note: error handling omitted)
+        temp.open({ suffix: '.java' }, function (err, info) {
+            if (!err) {
+                fs.write(info.fd, answerCode, (err) => {
+                    if (err) reject(err);
+                });
+                fs.close(info.fd, function (err) {
+                    if (err) reject(err);
+                    resolve(info);
+                });
+            }
+        });
+    })
 }
 
 module.exports = {
-    XPATH
+    evalJava
 }

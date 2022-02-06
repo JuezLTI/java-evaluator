@@ -7,20 +7,7 @@ import createError from 'http-errors';
 import * as cons from 'consolidate';
 
 
-
-
 var app = express();
-// view engine setup
-
-
-// view engine setup
-app.engine('html', cons.swig)
-app.set('views', path.join(__dirname, '../views'));
-app.set('view engine', 'html');
-
-
-
-
 
 app.cacheExercise = data
 

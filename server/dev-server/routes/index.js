@@ -17,10 +17,10 @@ router.get("/capabilities", function(req, res, next) {
     let evalRes = new EvaluationReport();
     let obj = {
         capabilities: [{
-            id: "XPath-evaluator",
+            id: "Java-evaluator",
             features: [{
                     name: "language",
-                    value: "XPath",
+                    value: "java",
                 },
                 {
                     name: "version",
@@ -28,7 +28,7 @@ router.get("/capabilities", function(req, res, next) {
                 },
                 {
                     name: "engine",
-                    value: "https://www.npmjs.com/package/xpath",
+                    value: "https://openjdk.java.net/",
                 },
             ],
         }, ],
@@ -93,10 +93,6 @@ router.post("/eval", function(req, res, next) {
                                                 );
                                             }
                                         });
-
-
-
-
                                 }).catch((error) => {
                                     console.log(error)
                                     console.log(" 1º error LearningObj not found or could not be loaded");
@@ -119,8 +115,8 @@ router.post("/eval", function(req, res, next) {
 });
 
 function evaluate(programmingExercise, evalReq, req, res, next) {
-    evaluator.XPATH(programmingExercise, evalReq).then((obj) => {
-       console.log("Resposta ->" + JSON.stringify(obj))
+    evaluator.evalJava(programmingExercise, evalReq).then((obj) => {
+       console.log("Answer ->" + JSON.stringify(obj))
         req.xpath_eval_result = JSON.stringify(obj);
         req.number_of_tests = programmingExercise.getTests().length
         /*     if (obj.reply.report.compilationErrors.length > 0) {
@@ -129,32 +125,9 @@ function evaluate(programmingExercise, evalReq, req, res, next) {
                 res.send("Correct Answer\n").status(200);
 
             }*/
-            
+
         next();
     });
 }
-
-
-router.post("/eval", function(req, res, next) {
-
-    request({
-            method: "POST",
-            url: process.env.FEEDBACK_MANAGER_URL,
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ PEARL: req.xpath_eval_result, additional: { numberOfTests: req.number_of_tests } })
-        },
-        function(error, response) {
-            
-            if (error!=null){
-                console.log(error)
-                res.json(error);
-            } 
-            else res.json(response.body);
-        }
-    );
-});
 
 export { router, data };

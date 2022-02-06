@@ -1,5 +1,0 @@
- curl --location --request GET 'http://fgpe.dcc.fc.up.pt/api//exercises/fd286cb3-5c95-4b0e-b843-56bc058a7713?join=statements&join=instructions' \
-        --header 'Accept: application/json' \
-        --header 'Content-Type: application/json' \
-        --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJlZjdjYzRhLTZlZjAtNDI2Zi1hYzgxLTgzZTRlNjYzMDgzMSIsImlhdCI6MTYzNjI5MzE1MCwiZXhwIjoxNjM2Mjk2NzUwLCJhdWQiOiJmZ3BlLmRjYy5mYy51cC5wdCIsImlzcyI6IjZiODdkNDMxLWI3M2EtNDNmZi05ZjdjLTA2NzVkNDM2ODUzMSJ9.EfA2CEIDbRzfvueEtXqL2ovyoHplnXwUl2__50sx_8U' \
-        --data-raw ''

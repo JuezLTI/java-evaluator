@@ -1,9 +1,6 @@
-programming-exercise-juezlti/node_modules/
-programming-exercise-juezlti/serialized/*
-evaluation-report-juezlti/node_modules/
-server/node_modules/
-server/public/zip/*
+programming-exercise-juezlti
+evaluation-report-juezlti
+server/node_modules
 server/dist-server
-tests/node_modules/
-main/node_modules/
-main/temp/
+tests/node_modules
+main
