@@ -117,7 +117,7 @@ router.post("/eval", function(req, res, next) {
 function evaluate(programmingExercise, evalReq, req, res, next) {
     evaluator.evalJava(programmingExercise, evalReq).then((obj) => {
        console.log("Answer ->" + JSON.stringify(obj))
-        req.xpath_eval_result = JSON.stringify(obj);
+        req.java_eval_result = JSON.stringify(obj);
         req.number_of_tests = programmingExercise.getTests().length
         /*     if (obj.reply.report.compilationErrors.length > 0) {
                 res.send("Incorrect Answer\n").status(200);
@@ -129,5 +129,27 @@ function evaluate(programmingExercise, evalReq, req, res, next) {
         next();
     });
 }
+
+router.post("/eval", function(req, res, next) {
+
+    request({
+            method: "POST",
+            url: process.env.FEEDBACK_MANAGER_URL,
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ PEARL: req.java_eval_result, additional: { numberOfTests: req.number_of_tests } })
+        },
+        function(error, response) {
+
+            if (error!=null){
+                console.log(error)
+                res.json(error);
+            }
+            else res.json(response.body);
+        }
+    );
+});
 
 export { router, data };
