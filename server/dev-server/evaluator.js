@@ -1,4 +1,5 @@
 import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti";
+import "babel-polyfill";
 
 async function evalJava(programmingExercise, evalReq) {
     return new Promise((resolve) => {
@@ -24,6 +25,7 @@ async function evalJava(programmingExercise, evalReq) {
                 }]
             }
             response.report.exercise = programmingExercise.id
+            response.report.compilationErrors = []
             try {
 
                 let solution_id = ""
