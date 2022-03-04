@@ -36,7 +36,7 @@ async function evalJava(programmingExercise, evalReq) {
                     }
                 }
                 const solution = programmingExercise.solutions_contents[solution_id]
-                let correct_anwsers = []
+                let correct_anwsers = true
                 for (let metadata of programmingExercise.tests) {
                     let input = programmingExercise.tests_contents_in[metadata.id];
 
@@ -49,16 +49,19 @@ async function evalJava(programmingExercise, evalReq) {
                         input
                     )
                     let [teacherNode, studentNode] = await Promise.all([teacherResult, studentResult])
-                    if (teacherNode != studentNode) {
-                        if ('request' in evalRes)
-                            delete evalRes.request
-                        response.report.compilationErrors = "incorrect java solution"
-                        console.log("1.- evalRes.setReply " + evalRes.setReply(response))
-                    } else {
-                        console.log("2.- evalRes.setReply " + evalRes.setReply(response))
+                    if(teacherNode != studentNode) {
+                        correct_anwsers = false
                     }
-                    resolve(evalRes)
                 }
+
+                if (!correct_anwsers) {
+                    response.report.compilationErrors = "incorrect java solution"
+                    console.log("1.- evalRes.setReply " + evalRes.setReply(response))
+                } else {
+                    console.log("2.- evalRes.setReply " + evalRes.setReply(response))
+                }
+                resolve(evalRes)
+
 
             } catch (error) {
                 response.report.compilationErrors = JSON.stringify(error)

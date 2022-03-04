@@ -20,13 +20,13 @@
     "nodemonConfig": {
         "exec": "npm run dev",
         "watch": [
-            "dev-server/*",
-            "public/*"
+            "dev-server/*"
         ],
         "ignore": [
             "**/__tests__/**",
             "*.test.js",
-            "*.spec.js"
+            "*.spec.js",
+            "public/zip/*"
         ]
     },
     "dependencies": {
