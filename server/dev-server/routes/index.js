@@ -103,7 +103,7 @@ router.post("/eval", function(req, res, next) {
                         })
                     }
                 } catch (error) {
-                    console.log(" 2º " + error);
+                    console.log(" Exception:  " + error);
                     res.send({ error: error });
                 }
             }
@@ -117,8 +117,12 @@ router.post("/eval", function(req, res, next) {
 function evaluate(programmingExercise, evalReq, req, res, next) {
     evaluator.evalJava(programmingExercise, evalReq).then((obj) => {
        console.log("Answer ->" + JSON.stringify(obj))
+       obj.reply.report.user_id = evalReq.studentID
+       obj.reply.report.number_of_tests = programmingExercise.getTests().length
+       let x = ([...Array(obj.reply.report.number_of_tests).keys()].filter((value) => { return !(value.toString() in obj.reply.report.compilationErrors) }))
+       obj.reply.report.number_of_incorrect_tests = Object.keys(obj.reply.report.compilationErrors);
+       obj.reply.report.number_of_correct_tests = x;
         req.java_eval_result = JSON.stringify(obj);
-        req.number_of_tests = programmingExercise.getTests().length
         /*     if (obj.reply.report.compilationErrors.length > 0) {
                 res.send("Incorrect Answer\n").status(200);
             } else {
@@ -131,7 +135,6 @@ function evaluate(programmingExercise, evalReq, req, res, next) {
 }
 
 router.post("/eval", function(req, res, next) {
-
     request({
             method: "POST",
             url: process.env.FEEDBACK_MANAGER_URL,
@@ -139,7 +142,7 @@ router.post("/eval", function(req, res, next) {
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ PEARL: req.java_eval_result, additional: { numberOfTests: req.number_of_tests } })
+            body: JSON.stringify({ PEARL: req.java_eval_result })
         },
         function(error, response) {
 
@@ -147,7 +150,9 @@ router.post("/eval", function(req, res, next) {
                 console.log(error)
                 res.json(error);
             }
-            else res.json(response.body);
+            else {
+                res.json(response.body);
+            } 
         }
     );
 });
