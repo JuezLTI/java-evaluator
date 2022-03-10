@@ -51,21 +51,23 @@ async function evalJava(programmingExercise, evalReq) {
                     let [teacherNode, studentNode] = await Promise.all([teacherResult, studentResult])
                     if(teacherNode != studentNode) {
                         correct_anwsers = false
+                        response.report.compilationErrors.push("incorrect java solution")
                     }
                 }
 
                 if (!correct_anwsers) {
-                    response.report.compilationErrors = "incorrect java solution"
-                    console.log("1.- evalRes.setReply " + evalRes.setReply(response))
+                    console.log("1.- evalRes.setReply " + response)
                 } else {
-                    console.log("2.- evalRes.setReply " + evalRes.setReply(response))
+                    console.log("2.- evalRes.setReply " + response)
                 }
+                evalRes.setReply(response)
                 resolve(evalRes)
 
 
             } catch (error) {
-                response.report.compilationErrors = JSON.stringify(error)
-                console.log("4.- evalRes.setReply " + evalRes.setReply(response))
+                console.log(error)
+                response.report.compilationErrors.push("impossibleToEvaluate")
+                evalRes.setReply(response)
                 resolve(evalRes)
             }
         })
