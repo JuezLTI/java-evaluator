@@ -54,12 +54,6 @@ async function evalJava(programmingExercise, evalReq) {
                         response.report.compilationErrors.push("incorrect java solution")
                     }
                 }
-
-                if (!correct_anwsers) {
-                    console.log("1.- evalRes.setReply " + response)
-                } else {
-                    console.log("2.- evalRes.setReply " + response)
-                }
                 evalRes.setReply(response)
                 resolve(evalRes)
 
