@@ -1,12 +1,13 @@
-import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti";
-import "babel-polyfill";
+import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti"
+import "babel-polyfill"
+import { resolve } from "path"
 
 async function evalJava(programmingExercise, evalReq) {
     return new Promise((resolve) => {
         loadSchemaPEARL().then(async () => {
 
 
-            let evalRes = new EvaluationReport();
+            let evalRes = new EvaluationReport()
             evalRes.setRequest(evalReq.request)
             let program = evalReq.request.program
             let response = {}
@@ -32,24 +33,25 @@ async function evalJava(programmingExercise, evalReq) {
                 for (let solutions of programmingExercise.solutions) {
                     if (solutions.lang == "java") {
                         solution_id = solutions.id
-                        break;
+                        break
                     }
                 }
                 const solution = programmingExercise.solutions_contents[solution_id]
                 let correct_anwsers = true
+                var files = await createFilesFromCode(solution, program)
                 for (let metadata of programmingExercise.tests) {
-                    let input = programmingExercise.tests_contents_in[metadata.id];
+                    let input = programmingExercise.tests_contents_in[metadata.id]
 
                     var teacherResult = getOutputFromCode(
-                        solution,
+                        files[0],
                         input
                     )
                     var studentResult = getOutputFromCode(
-                        program,
+                        files[1],
                         input
                     )
                     let [teacherNode, studentNode] = await Promise.all([teacherResult, studentResult])
-                    if(teacherNode != studentNode) {
+                    if (teacherNode != studentNode) {
                         correct_anwsers = false
                         response.report.compilationErrors.push("incorrect java solution")
                     }
@@ -57,10 +59,8 @@ async function evalJava(programmingExercise, evalReq) {
                 evalRes.setReply(response)
                 resolve(evalRes)
 
-
             } catch (error) {
-                console.log(error)
-                response.report.compilationErrors.push("impossibleToEvaluate")
+                response.report.compilationErrors.push(error)
                 evalRes.setReply(response)
                 resolve(evalRes)
             }
@@ -69,63 +69,73 @@ async function evalJava(programmingExercise, evalReq) {
 }
 
 
-const getOutputFromCode = (answerCode, input) => {
+const getOutputFromCode = (info, input) => {
     return new Promise((resolve, reject) => {
         var util = require('util'),
             execFile = require('child_process').execFile,
-            output = '';
-        createFileFromCode(answerCode)
-            .then(info => {
-                const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', info.path],
-                    {
-                        timeout: 5000,
-                        maxBuffer: 65535
-                    });
-
-                child.stdin.setEncoding = 'utf-8';
-
-                child.stdout.on('data', (data) => {
-                    output += data.toString();
-                });
-
-                // Handle error output
-                child.stderr.on('data', (data) => {
-                    reject(data);
-                });
-                child.stdout.on('end', async function (code) {
-                    resolve(output);
-                });
-
-                process.stdin.pipe(child.stdin);
-                child.stdin.write(input + '\n');
+            output = ''
+        const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', info.path],
+            {
+                timeout: 5000,
+                maxBuffer: 65535
             })
-            .catch(e => {
-                console.log("error " + e);
-                reject(e);
-            });
+
+        child.stdin.setEncoding = 'utf-8'
+
+        child.stdout.on('data', (data) => {
+            output += data.toString()
+        })
+
+        // Handle error output
+        child.stderr.on('data', (data) => {
+            reject(data)
+        })
+        child.stdout.on('end', async function (code) {
+            resolve(output)
+        })
+
+        process.stdin.pipe(child.stdin)
+        child.stdin.write(input + '\n')
     })
 }
 
-const createFileFromCode = (answerCode) => {
+
+
+const createFilesFromCode = (solutionCode, answerCode) => {
+    return new Promise((resolve, reject) => {
+        let promiseSolution = createFileFromCode(solutionCode)
+        let promiseAnswer = createFileFromCode(answerCode)
+        Promise.all([promiseSolution, promiseAnswer])
+            .then(files => {
+                resolve(files)
+            })
+            .catch(error => {
+                reject(error)
+            })
+    })
+}
+
+
+const createFileFromCode = (code) => {
     return new Promise((resolve, reject) => {
         var temp = require('temp'),
             fs = require('fs')
 
         // Automatically track and cleanup files at exit
-        temp.track();
+        temp.track()
 
         // Process the data (note: error handling omitted)
         temp.open({ suffix: '.java' }, function (err, info) {
             if (!err) {
-                fs.write(info.fd, answerCode, (err) => {
-                    if (err) reject(err);
-                });
+                fs.write(info.fd, code, (err) => {
+                    if (err) reject(err)
+                })
                 fs.close(info.fd, function (err) {
-                    if (err) reject(err);
-                    resolve(info);
-                });
+                    if (err) reject(err)
+                    resolve(info)
+                })
             }
-        });
+        })
     })
 }
 
