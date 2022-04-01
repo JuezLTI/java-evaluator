@@ -2,7 +2,7 @@ import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti"
 import "babel-polyfill"
 import { resolve } from "path"
 
-async function evalJava(programmingExercise, evalReq) {
+async function evalJava(programmingExercise, evalReq) { 
     return new Promise((resolve) => {
         loadSchemaPEARL().then(async () => {
 
@@ -25,41 +25,28 @@ async function evalJava(programmingExercise, evalReq) {
                     "value": "https://www.npmjs.com/package/java"
                 }]
             }
+            response.report.programmingLanguage = "Java"
             response.report.exercise = programmingExercise.id
             response.report.compilationErrors = []
+            let tests = []
             try {
-
-                let solution_id = ""
-                for (let solutions of programmingExercise.solutions) {
-                    if (solutions.lang == "java") {
-                        solution_id = solutions.id
-                        break
-                    }
-                }
-                const solution = programmingExercise.solutions_contents[solution_id]
-                let correct_anwsers = true
-                var files = await createFilesFromCode(solution, program)
+                var fileAnswer = await createFileFromCode(program)
                 for (let metadata of programmingExercise.tests) {
+                    let lastTestError = {}
                     let input = programmingExercise.tests_contents_in[metadata.id]
-
-                    var teacherResult = getOutputFromCode(
-                        files[0],
-                        input
-                    )
-                    var studentResult = getOutputFromCode(
-                        files[1],
-                        input
-                    )
-                    let [teacherNode, studentNode] = await Promise.all([teacherResult, studentResult])
-                    if (teacherNode != studentNode) {
-                        correct_anwsers = false
-                        response.report.compilationErrors.push("incorrect java solution")
-                    }
+                    let expectedOutput = programmingExercise.tests_contents_out[metadata.id]
+                    let resultStudent = await getOutputFromCode(fileAnswer, input)
+                        .catch(error => {
+                            lastTestError = error
+                        })
+                    tests.push(addTest(input, expectedOutput, resultStudent, lastTestError))
                 }
+                response.report.tests = tests
                 evalRes.setReply(response)
                 resolve(evalRes)
 
             } catch (error) {
+                console.log('error: ', error)
                 response.report.compilationErrors.push(error)
                 evalRes.setReply(response)
                 resolve(evalRes)
@@ -76,8 +63,10 @@ const getOutputFromCode = (info, input) => {
             output = ''
         const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', info.path],
             {
-                timeout: 5000,
+                timeout: 1000,
                 maxBuffer: 65535
+            }, function (err, stdout, stderr) {
+                reject(err)
             })
 
         child.stdin.setEncoding = 'utf-8'
@@ -98,23 +87,6 @@ const getOutputFromCode = (info, input) => {
         child.stdin.write(input + '\n')
     })
 }
-
-
-
-const createFilesFromCode = (solutionCode, answerCode) => {
-    return new Promise((resolve, reject) => {
-        let promiseSolution = createFileFromCode(solutionCode)
-        let promiseAnswer = createFileFromCode(answerCode)
-        Promise.all([promiseSolution, promiseAnswer])
-            .then(files => {
-                resolve(files)
-            })
-            .catch(error => {
-                reject(error)
-            })
-    })
-}
-
 
 const createFileFromCode = (code) => {
     return new Promise((resolve, reject) => {
@@ -137,6 +109,53 @@ const createFileFromCode = (code) => {
             }
         })
     })
+}
+
+const addTest = (input, expectedOutput, obtainedOutput, lastTestError) => {
+    const Diff = require('diff')
+    obtainedOutput = obtainedOutput ? obtainedOutput : ''
+    const outputDifferences = JSON.stringify(Diff.diffTrimmedLines(expectedOutput, obtainedOutput));
+    return {
+        'input': input,
+        'expectedOutput': expectedOutput,
+        'obtainedOutput': obtainedOutput,
+        'outputDifferences': outputDifferences ? outputDifferences : '',
+        'classify': getClassify(expectedOutput, obtainedOutput, lastTestError),
+        'mark': getGrade(expectedOutput, obtainedOutput),
+        'feedback': getFeedback(expectedOutput, obtainedOutput),
+        'environmentValues': []
+    }
+}
+
+const getGrade = (expectedOutput, obtainedOutput) => {
+    return expectedOutput == obtainedOutput ? 100 : 0
+}
+
+const getFeedback = (expectedOutput, obtainedOutput) => {
+    let feedback = 'Right Answer.'
+    // TODO get feedback from exercise's test
+
+    if(getGrade(expectedOutput, obtainedOutput) < 1)
+        feedback = 'Wrong Answer.'
+
+    return feedback
+}
+
+const getClassify = (expectedOutput, obtainedOutput, lastTestError) => {
+    let classify = ''
+console.log('lastTestError: ' + JSON.stringify(lastTestError))
+    if(getGrade(expectedOutput, obtainedOutput) < 1)
+        classify = 'Wrong Answer.'
+    if(lastTestError?.code) {
+        switch(lastTestError.code) {
+            case 143:
+                classify = 'Timeout.'
+                break
+            default:
+                classify = 'Compilation/Runtime Error.'
+        }
+    }
+    return classify
 }
 
 module.exports = {
