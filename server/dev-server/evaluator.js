@@ -27,7 +27,7 @@ async function evalJava(programmingExercise, evalReq) {
             }
             response.report.programmingLanguage = "Java"
             response.report.exercise = programmingExercise.id
-            response.report.compilationErrors = []
+//            response.report.compilationErrors = []
             let tests = []
             try {
                 var fileAnswer = await createFileFromCode(program)
@@ -47,7 +47,7 @@ async function evalJava(programmingExercise, evalReq) {
 
             } catch (error) {
                 console.log('error: ', error)
-                response.report.compilationErrors.push(error)
+//                response.report.compilationErrors.push(error)
                 evalRes.setReply(response)
                 resolve(evalRes)
             }
@@ -142,17 +142,17 @@ const getFeedback = (expectedOutput, obtainedOutput) => {
 }
 
 const getClassify = (expectedOutput, obtainedOutput, lastTestError) => {
-    let classify = ''
-console.log('lastTestError: ' + JSON.stringify(lastTestError))
+    let classify = 'Accepted'
+
     if(getGrade(expectedOutput, obtainedOutput) < 1)
-        classify = 'Wrong Answer.'
+        classify = 'Wrong Answer'
     if(lastTestError?.code) {
         switch(lastTestError.code) {
             case 143:
-                classify = 'Timeout.'
+                classify = 'Time Limit Exceeded'
                 break
             default:
-                classify = 'Compilation/Runtime Error.'
+                classify = 'Runtime Error'
         }
     }
     return classify
