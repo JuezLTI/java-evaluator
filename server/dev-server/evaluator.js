@@ -2,15 +2,16 @@ import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti"
 import "babel-polyfill"
 import { resolve } from "path"
 
-async function evalJava(programmingExercise, evalReq) { 
+async function evalJava(programmingExercise, evalReq) {
     return new Promise((resolve) => {
         loadSchemaPEARL().then(async () => {
 
 
-            let evalRes = new EvaluationReport()
+            var evalRes = new EvaluationReport(),
+                response = {}
+
             evalRes.setRequest(evalReq.request)
             let program = evalReq.request.program
-            let response = {}
             response.report = {}
             response.report.capability = {
                 "id": "Java-evaluator",
@@ -27,27 +28,31 @@ async function evalJava(programmingExercise, evalReq) {
             }
             response.report.programmingLanguage = "Java"
             response.report.exercise = programmingExercise.id
-//            response.report.compilationErrors = []
             let tests = []
             try {
-                var fileAnswer = await createFileFromCode(program)
+                var path = require('path'),
+                    className = getClassNameFromCode(program)
+                if(!className) throw (new Error("Class name doesn't find"))
+                var fileAnswer = await createFileFromCode(program, className)
+
+                await compileJavaCode(fileAnswer)
+                let dirPath = path.dirname(fileAnswer)
+                // let className = path.basename(fileAnswer).replace(path.extname(fileAnswer), '')
                 for (let metadata of programmingExercise.tests) {
                     let lastTestError = {}
                     let input = programmingExercise.tests_contents_in[metadata.id]
                     let expectedOutput = programmingExercise.tests_contents_out[metadata.id]
-                    let resultStudent = await getOutputFromCode(fileAnswer, input)
+                    let resultStudent = await getOutputFromCode(dirPath, className, input)
                         .catch(error => {
                             lastTestError = error
                         })
                     tests.push(addTest(input, expectedOutput, resultStudent, lastTestError))
                 }
-                response.report.tests = tests
-                evalRes.setReply(response)
-                resolve(evalRes)
 
             } catch (error) {
                 console.log('error: ', error)
-//                response.report.compilationErrors.push(error)
+            } finally {
+                response.report.tests = tests
                 evalRes.setReply(response)
                 resolve(evalRes)
             }
@@ -56,13 +61,14 @@ async function evalJava(programmingExercise, evalReq) {
 }
 
 
-const getOutputFromCode = (info, input) => {
+const getOutputFromCode = (dirPath, className, input) => {
     return new Promise((resolve, reject) => {
         var util = require('util'),
             execFile = require('child_process').execFile,
             output = ''
-        const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', info.path],
+        const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', className],
             {
+                cwd: dirPath,
                 timeout: 1000,
                 maxBuffer: 65535
             }, function (err, stdout, stderr) {
@@ -88,25 +94,39 @@ const getOutputFromCode = (info, input) => {
     })
 }
 
-const createFileFromCode = (code) => {
+
+const createFileFromCode = (code, className) => {
     return new Promise((resolve, reject) => {
         var temp = require('temp'),
-            fs = require('fs')
+            fs = require('fs'),
+            path = require('path')
 
         // Automatically track and cleanup files at exit
-        temp.track()
+        temp.track();
 
-        // Process the data (note: error handling omitted)
-        temp.open({ suffix: '.java' }, function (err, info) {
-            if (!err) {
-                fs.write(info.fd, code, (err) => {
-                    if (err) reject(err)
-                })
-                fs.close(info.fd, function (err) {
-                    if (err) reject(err)
-                    resolve(info)
-                })
-            }
+        temp.mkdir('compiled', function (err, dirPath) {
+            var inputPath = path.join(dirPath, className + '.java')
+            fs.writeFile(inputPath, code, function (err) {
+                if (err) throw err;
+                resolve(inputPath)
+            })
+        });
+    })
+}
+
+const getClassNameFromCode = (code) => {
+    let className = (code.match(/public[ \t]*class[ \t]*([^\{]*)/) || [])[1]
+    return className && className.trim()
+}
+
+const compileJavaCode = (fileName) => {
+    return new Promise((resolve, reject) => {
+        const { exec } = require("child_process");
+
+        exec("javac " + fileName, (error, stdout, stderr) => {
+            if (error) reject(error);
+            if (stderr) reject(stderr)
+            resolve(stdout)
         })
     })
 }
