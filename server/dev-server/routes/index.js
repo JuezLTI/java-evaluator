@@ -117,19 +117,7 @@ router.post("/eval", function(req, res, next) {
 function evaluate(programmingExercise, evalReq, req, res, next) {
     evaluator.evalJava(programmingExercise, evalReq).then((obj) => {
        console.log("Answer ->" + JSON.stringify(obj))
-       obj.reply.report.user_id = evalReq.studentID
-       // TODO change number_of_tests to tests as PERL Schema
-       // obj.reply.report.number_of_tests = programmingExercise.getTests().length
-       // let x = ([...Array(obj.reply.report.number_of_tests).keys()].filter((value) => { return !(value.toString() in obj.reply.report.compilationErrors) }))
-       // obj.reply.report.number_of_incorrect_tests = Object.keys(obj.reply.report.compilationErrors);
-       // obj.reply.report.number_of_correct_tests = x;
-        req.java_eval_result = JSON.stringify(obj);
-        /*     if (obj.reply.report.compilationErrors.length > 0) {
-                res.send("Incorrect Answer\n").status(200);
-            } else {
-                res.send("Correct Answer\n").status(200);
-
-            }*/
+       req.java_eval_result = obj;
 
         next();
     });
@@ -143,7 +131,7 @@ router.post("/eval", function(req, res, next) {
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
-            body: { PEARL: req.java_eval_result }
+            body: JSON.stringify(req.java_eval_result)
         },
         function(error, response) {
 

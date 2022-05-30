@@ -50,7 +50,11 @@ async function evalJava(programmingExercise, evalReq) {
                 }
 
             } catch (error) {
-                console.log('error: ', error)
+                let summary = {
+                    "classify" : "Compile Time Error",
+                    "feedback" : error.message
+                }
+                evalRes.summary = summary
             } finally {
                 response.report.tests = tests
                 evalRes.setReply(response)
