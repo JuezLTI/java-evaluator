@@ -8,7 +8,11 @@ async function evalJava(programmingExercise, evalReq) {
 
 
             var evalRes = new EvaluationReport(),
-                response = {}
+                response = {},
+                summary = {
+                    "classify" : 'Accepted',
+                    "feedback" : 'Well done'
+                }
 
             evalRes.setRequest(evalReq.request)
             let program = evalReq.request.program
@@ -46,18 +50,24 @@ async function evalJava(programmingExercise, evalReq) {
                         .catch(error => {
                             lastTestError = error
                         })
+                    if(getGrade() == 0) {
+                        summary = {
+                            "classify" : 'Wrong Answer',
+                            "feedback" : 'Try it again'
+                        }
+                    }
                     tests.push(addTest(input, expectedOutput, resultStudent, lastTestError))
                 }
 
             } catch (error) {
-                let summary = {
+                summary = {
                     "classify" : "Compile Time Error",
                     "feedback" : error.message
                 }
-                evalRes.summary = summary
             } finally {
                 response.report.tests = tests
                 evalRes.setReply(response)
+                evalRes.summary = summary
                 resolve(evalRes)
             }
         })
