@@ -50,7 +50,7 @@ async function evalJava(programmingExercise, evalReq) {
                         .catch(error => {
                             lastTestError = error
                         })
-                    if(getGrade() == 0) {
+                    if(getGrade(expectedOutput, resultStudent) == 0) {
                         summary = {
                             "classify" : 'Wrong Answer',
                             "feedback" : 'Try it again'

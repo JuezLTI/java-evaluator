@@ -124,7 +124,6 @@ function evaluate(programmingExercise, evalReq, req, res, next) {
 }
 
 router.post("/eval", function(req, res, next) {
-    var pearl = req.java_eval_result
     request({
             method: "POST",
             url: process.env.FEEDBACK_MANAGER_URL,
@@ -141,10 +140,8 @@ router.post("/eval", function(req, res, next) {
                 res.json(error);
             }
             else {
-                res.json({
-                    'pearl' : pearl,
-                    'feedback': response.body
-                });
+                let pearlWithFeedback = JSON.parse(response.body)
+                res.json(pearlWithFeedback);
             } 
         }
     );
