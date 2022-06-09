@@ -36,7 +36,9 @@ async function evalJava(programmingExercise, evalReq) {
             try {
                 var path = require('path'),
                     className = getClassNameFromCode(program)
-                if(!className) throw (new Error("Class name doesn't find"))
+                if(!className) throw (
+                    new Error("Class name doesn't find. Have you defined the main class as public?")
+                )
                 var fileAnswer = await createFileFromCode(program, className)
 
                 await compileJavaCode(fileAnswer)
