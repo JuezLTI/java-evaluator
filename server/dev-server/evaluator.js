@@ -88,7 +88,7 @@ const getOutputFromCode = (dirPath, className, input) => {
                 timeout: 1000,
                 maxBuffer: 65535
             }, function (err, stdout, stderr) {
-                reject(err)
+                if(err) reject(err)
             })
 
         child.stdin.setEncoding = 'utf-8'
