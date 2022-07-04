@@ -6,7 +6,8 @@ dotenv.config('../env.js');
 import evaluator from "../evaluator";
 import path from "path";
 import request from "request";
-
+import Cache from "cache";
+const cache = new Cache(600 * 1000); // Create a cache with 600 second TTL
 import fs from "fs";
 
 var router = express.Router();
@@ -51,83 +52,80 @@ router.get("/", function(req, res) {
     }
 });
 
-router.post("/eval", function(req, res, next) {
+router.post("/eval", async function(req, res, next) {
 
-    loadSchemaPEARL().then(() => {
-        console.log(req.body)
-        let evalReq = new EvaluationReport();
-        if (evalReq.setRequest(req.body)) {
-            if ("program" in evalReq.request) {
-                loadSchemaYAPEXIL().then(() => {
-                    ProgrammingExercise.deserialize(path.join(__dirname, "../../public/zip"), `${evalReq.request.learningObject}.zip`).
-                        then((programmingExercise) => {
-                            evaluate(programmingExercise, evalReq, req, res, next)
-                    }).catch((error) => {
-                            ProgrammingExercise
-                                .loadRemoteExercise(evalReq.request.learningObject, {
-                                    'BASE_URL': process.env.BASE_URL,
-                                    'EMAIL': process.env.EMAIL,
-                                    'PASSWORD': process.env.PASSWORD,
-                                })
-                                .then((programmingExercise) => {
+    await loadSchemaPEARL();
+    await loadSchemaYAPEXIL();
 
-                                    evaluate(programmingExercise, evalReq, req, res, next)
+    evaluate(req)
+        .then(async(obj) => {
 
-                                    programmingExercise
-                                        .serialize(path.join(__dirname, "../../public/zip"))
-                                        .then((test) => {
-                                            if (test) {
-                                                console.log(
-                                                    `The exercise ${programmingExercise.id} was insert in cache`
-                                                );
-                                            }
-                                        });
-                                }).catch((error) => {
-                                    console.log(error)
-                                    console.log(" 1º error LearningObj not found or could not be loaded");
-                                    res.send({ error: "LearningObj not found" });
-                                });
-                            })
-                    })
-            }
-        } else {
-            res.send({ "error": "INVALID PEARL" }).status(500);
-        }
+            obj.reply.report.user_id = req.studentID
+            req.java_eval_result = obj;
 
-    })
+            request({
+                    method: "POST",
+                    url: process.env.FEEDBACK_MANAGER_URL,
+                    headers: {
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(req.java_eval_result)
+                },
+                function(error, response) {
+
+                    if (error != null || response.statusCode != 200) {
+                        res.json(error).status(500);
+
+                    } else {
+                        let pearlWithFeedback = JSON.parse(response.body)
+                        res.send(pearlWithFeedback);
+                    }
+                }
+            );
+        })
+        .catch((err) => {
+            res.send({ "error": err.message }).status(500);
+        });
 });
 
-function evaluate(programmingExercise, evalReq, req, res, next) {
-    evaluator.evalJava(programmingExercise, evalReq).then((obj) => {
-       console.log("Answer ->" + JSON.stringify(obj))
-       req.java_eval_result = obj;
+async function evaluate(req) {
+    const evalReq = new EvaluationReport();
+    if (!evalReq.setRequest(req.body)) {
 
-        next();
-    });
+        console.log("INVALID PEARL")
+        throw new Error("INVALID PEARL");
+    }
+
+    if ("program" in evalReq.request) {
+        const programmingExercise = await getProgrammingExercise(evalReq);
+        const assesment = await evaluator.evalJava(programmingExercise, evalReq)
+        return assesment;
+    }
 }
 
-router.post("/eval", function(req, res, next) {
-    request({
-            method: "POST",
-            url: process.env.FEEDBACK_MANAGER_URL,
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(req.java_eval_result)
-        },
-        function(error, response) {
+async function getProgrammingExercise(evalReq) {
 
-            if (error!=null || response.statusCode != 200){
-                console.log(error)
-                res.json(error).status(500);
-            }
-            else {
-                let pearlWithFeedback = JSON.parse(response.body)
-                res.json(pearlWithFeedback);
-            } 
+    let programmingExercise = cache.get(evalReq.request.learningObject);
+
+    if (programmingExercise == null) {
+        try {
+            programmingExercise = await ProgrammingExercise
+                .loadRemoteExercise(evalReq.request.learningObject, {
+                    'BASE_URL': process.env.BASE_URL,
+                    'EMAIL': process.env.EMAIL,
+                    'PASSWORD': process.env.PASSWORD,
+                });
+
+        } catch (err) {
+            throw new Error("LearningObj not found")
         }
-    );
-});
+        cache.put(evalReq.request.learningObject, programmingExercise)
+        return programmingExercise;
+
+    } else {
+        return programmingExercise;
+    }
+}
 
 export { router };
