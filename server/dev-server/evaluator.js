@@ -96,8 +96,13 @@ async function evalProgramming(programmingExercise, evalReq) {
 }
 
 const getCapability = (language) => {
-    console.log("language", language)
-    return capabilities[0]
+    let languagesArray = []
+    capabilities.forEach(element => {
+        languagesArray.push(element.features[element.features.findIndex(subelement => subelement.name == 'language')].value)
+    })
+
+    let indexCapability = languagesArray.findIndex(languageElement => languageElement.toLowerCase() == language.toLowerCase())
+    return capabilities[indexCapability]
 }
 
 const getOutputFromCode = (dirPath, className, input) => {
