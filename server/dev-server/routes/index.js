@@ -12,25 +12,11 @@ import fs from "fs";
 
 var router = express.Router();
 
+
 router.get("/capabilities", function(req, res, next) {
     let evalRes = new EvaluationReport();
     let obj = {
-        capabilities: [{
-            id: "Java-evaluator",
-            features: [{
-                    name: "language",
-                    value: "java",
-                },
-                {
-                    name: "version",
-                    value: ".01",
-                },
-                {
-                    name: "engine",
-                    value: "https://openjdk.java.net/",
-                },
-            ],
-        }, ],
+        capabilities: evaluator.capabilities,
     };
 
     evalRes.setReply(obj);
@@ -61,7 +47,7 @@ router.post("/eval", async function(req, res, next) {
         .then(async(obj) => {
 
             obj.reply.report.user_id = req.studentID
-            req.java_eval_result = obj;
+            req.programming_eval_result = obj;
 
             request({
                     method: "POST",
@@ -70,7 +56,7 @@ router.post("/eval", async function(req, res, next) {
                         Accept: "application/json",
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify(req.java_eval_result)
+                    body: JSON.stringify(req.programming_eval_result)
                 },
                 function(error, response) {
 
@@ -99,7 +85,7 @@ async function evaluate(req) {
 
     if ("program" in evalReq.request) {
         const programmingExercise = await getProgrammingExercise(evalReq);
-        const assesment = await evaluator.evalJava(programmingExercise, evalReq)
+        const assesment = await evaluator.evalProgramming(programmingExercise, evalReq)
         return assesment;
     }
 }

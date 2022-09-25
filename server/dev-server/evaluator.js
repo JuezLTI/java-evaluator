@@ -1,8 +1,39 @@
 import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti"
 import "babel-polyfill"
-import { resolve } from "path"
 
-async function evalJava(programmingExercise, evalReq) {
+const capabilities = [{
+            id: "Java-evaluator",
+            features: [{
+                    name: "language",
+                    value: "java",
+                },
+                {
+                    name: "version",
+                    value: "openjdk 11.0.15",
+                },
+                {
+                    name: "engine",
+                    value: "https://openjdk.java.net/",
+                },
+            ],
+        }, {
+            id: "Python-evaluator",
+            features: [{
+                    name: "language",
+                    value: "python",
+                },
+                {
+                    name: "version",
+                    value: "3.9.2",
+                },
+                {
+                    name: "engine",
+                    value: "https://www.python.org/download/releases/3.0/",
+                },
+            ],
+        },]
+
+async function evalProgramming(programmingExercise, evalReq) {
     return new Promise((resolve) => {
         loadSchemaPEARL().then(async () => {
 
@@ -17,19 +48,7 @@ async function evalJava(programmingExercise, evalReq) {
             evalRes.setRequest(evalReq.request)
             let program = evalReq.request.program
             response.report = {}
-            response.report.capability = {
-                "id": "Java-evaluator",
-                "features": [{
-                    "name": "language",
-                    "value": "Java"
-                }, {
-                    "name": "version",
-                    "value": "openjdk 11.0.12"
-                }, {
-                    "name": "engine",
-                    "value": "https://www.npmjs.com/package/java"
-                }]
-            }
+            response.report.capability = getCapability(evalReq.request.language)
             response.report.programmingLanguage = "Java"
             response.report.exercise = programmingExercise.id
             let tests = []
@@ -41,7 +60,7 @@ async function evalJava(programmingExercise, evalReq) {
                 )
                 var fileAnswer = await createFileFromCode(program, className)
 
-                await compileJavaCode(fileAnswer)
+                await compileCode(fileAnswer)
                 let dirPath = path.dirname(fileAnswer)
                 // let className = path.basename(fileAnswer).replace(path.extname(fileAnswer), '')
                 for (let metadata of programmingExercise.tests) {
@@ -76,6 +95,10 @@ async function evalJava(programmingExercise, evalReq) {
     })
 }
 
+const getCapability = (language) => {
+    console.log("language", language)
+    return capabilities[0]
+}
 
 const getOutputFromCode = (dirPath, className, input) => {
     return new Promise((resolve, reject) => {
@@ -135,7 +158,7 @@ const getClassNameFromCode = (code) => {
     return className && className.trim()
 }
 
-const compileJavaCode = (fileName) => {
+const compileCode = (fileName) => {
     return new Promise((resolve, reject) => {
         const { exec } = require("child_process");
 
@@ -195,5 +218,6 @@ const getClassify = (expectedOutput, obtainedOutput, lastTestError) => {
 }
 
 module.exports = {
-    evalJava
+    evalProgramming,
+    capabilities
 }
