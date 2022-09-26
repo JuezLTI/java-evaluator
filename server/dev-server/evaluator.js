@@ -108,6 +108,7 @@ async function evalProgramming(programmingExercise, evalReq) {
                 response.report.tests = tests
                 evalRes.setReply(response)
                 evalRes.summary = summary
+                if(fileAnswer) {cleanTmpDir(fileAnswer)}
                 resolve(evalRes)
             }
         })
@@ -248,6 +249,23 @@ const getClassify = (expectedOutput, obtainedOutput, lastTestError) => {
         }
     }
     return classify
+}
+
+const cleanTmpDir = (fileAnswer) => {
+    const fs = require('fs'),
+        path = require('path')
+
+    // directory path
+    const dir = path.dirname(fileAnswer)
+    
+    // delete directory recursively
+    try {
+      fs.rmSync(dir, { recursive: true })
+    
+      console.log(`${dir} is deleted!`)
+    } catch (err) {
+      console.error(`Error while deleting ${dir}.`)
+    }
 }
 
 module.exports = {
