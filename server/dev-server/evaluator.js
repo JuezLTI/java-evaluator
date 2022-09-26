@@ -16,6 +16,13 @@ const capabilities = [{
                     value: "https://openjdk.java.net/",
                 },
             ],
+            programmingFeatures: {
+                compilationProgram: 'javac',
+                extFile: 'java',
+                executionProgram: 'java',
+                executionProgramParameters: ['-Duser.language=es', '-Duser.region=ES'],
+                needsClassName: true
+            }
         }, {
             id: "Python-evaluator",
             features: [{
@@ -31,6 +38,13 @@ const capabilities = [{
                     value: "https://www.python.org/download/releases/3.0/",
                 },
             ],
+            programmingFeatures: {
+                compilationProgram: null,
+                extFile: 'py',
+                executionProgram: 'python3',
+                executionProgramParameters: [],
+                needsClassName: false
+            }
         },]
 
 async function evalProgramming(programmingExercise, evalReq) {
@@ -46,28 +60,33 @@ async function evalProgramming(programmingExercise, evalReq) {
                 }
 
             evalRes.setRequest(evalReq.request)
-            let program = evalReq.request.program
+            let program = evalReq.request.program,
+                capability = getCapability(evalReq.request.language),
+                language = evalReq.request.language
             response.report = {}
-            response.report.capability = getCapability(evalReq.request.language)
-            response.report.programmingLanguage = "Java"
+            response.report.capability = capability
+            response.report.programmingLanguage = language
             response.report.exercise = programmingExercise.id
             let tests = []
             try {
-                var path = require('path'),
+                var className = 'sourcecode'
+                if(capability.programmingFeatures.needsClassName) {
                     className = getClassNameFromCode(program)
-                if(!className) throw (
-                    new Error("Class name doesn't find. Have you defined the main class as public?")
-                )
-                var fileAnswer = await createFileFromCode(program, className)
+                    if(!className) throw (
+                        new Error("Class name doesn't find. Have you defined the main class as public?")
+                    )
+                }
+                var fileAnswer = await createFileFromCode(program, className, capability.programmingFeatures.extFile)
 
-                await compileCode(fileAnswer)
-                let dirPath = path.dirname(fileAnswer)
-                // let className = path.basename(fileAnswer).replace(path.extname(fileAnswer), '')
+                if(capability.programmingFeatures.compilationProgram != null) {
+                    await compileCode(fileAnswer, capability.programmingFeatures.compilationProgram)
+                }
+
                 for (let metadata of programmingExercise.tests) {
                     let lastTestError = {}
                     let input = programmingExercise.tests_contents_in[metadata.id]
                     let expectedOutput = programmingExercise.tests_contents_out[metadata.id]
-                    let resultStudent = await getOutputFromCode(dirPath, className, input)
+                    let resultStudent = await getOutputFromCode(fileAnswer, className, input, capability)
                         .catch(error => {
                             lastTestError = error
                         })
@@ -105,12 +124,20 @@ const getCapability = (language) => {
     return capabilities[indexCapability]
 }
 
-const getOutputFromCode = (dirPath, className, input) => {
+const getOutputFromCode = (fileAnswer, className, input, capability) => {
     return new Promise((resolve, reject) => {
         var util = require('util'),
+            path = require('path'),
             execFile = require('child_process').execFile,
             output = ''
-        const child = execFile('java', ['-Duser.language=es', '-Duser.region=ES', className],
+        let dirPath = path.dirname(fileAnswer)
+        if(capability.programmingFeatures.needsClassName) {
+            capability.programmingFeatures.executionProgramParameters.push(className)
+        } else {
+            capability.programmingFeatures.executionProgramParameters.push(fileAnswer)
+        }
+        const child = execFile(capability.programmingFeatures.executionProgram,
+            capability.programmingFeatures.executionProgramParameters,
             {
                 cwd: dirPath,
                 timeout: 1000,
@@ -139,7 +166,7 @@ const getOutputFromCode = (dirPath, className, input) => {
 }
 
 
-const createFileFromCode = (code, className) => {
+const createFileFromCode = (code, className, extFile) => {
     return new Promise((resolve, reject) => {
         var temp = require('temp'),
             fs = require('fs'),
@@ -149,7 +176,7 @@ const createFileFromCode = (code, className) => {
         temp.track();
 
         temp.mkdir('compiled', function (err, dirPath) {
-            var inputPath = path.join(dirPath, className + '.java')
+            var inputPath = path.join(dirPath, className + '.' + extFile)
             fs.writeFile(inputPath, code, function (err) {
                 if (err) throw err;
                 resolve(inputPath)
@@ -163,11 +190,11 @@ const getClassNameFromCode = (code) => {
     return className && className.trim()
 }
 
-const compileCode = (fileName) => {
+const compileCode = (fileName, compilationProgram) => {
     return new Promise((resolve, reject) => {
         const { exec } = require("child_process");
 
-        exec("javac " + fileName, (error, stdout, stderr) => {
+        exec(compilationProgram + " " + fileName, (error, stdout, stderr) => {
             if (error) reject(error);
             if (stderr) reject(stderr)
             resolve(stdout)
