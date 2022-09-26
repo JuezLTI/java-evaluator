@@ -130,14 +130,15 @@ const getOutputFromCode = (fileAnswer, className, input, capability) => {
             path = require('path'),
             execFile = require('child_process').execFile,
             output = ''
-        let dirPath = path.dirname(fileAnswer)
+        let dirPath = path.dirname(fileAnswer),
+            executionProgramParameters = []
         if(capability.programmingFeatures.needsClassName) {
-            capability.programmingFeatures.executionProgramParameters.push(className)
+            executionProgramParameters.push(className)
         } else {
-            capability.programmingFeatures.executionProgramParameters.push(fileAnswer)
+            executionProgramParameters.push(fileAnswer)
         }
         const child = execFile(capability.programmingFeatures.executionProgram,
-            capability.programmingFeatures.executionProgramParameters,
+            capability.programmingFeatures.executionProgramParameters.concat(executionProgramParameters),
             {
                 cwd: dirPath,
                 timeout: 1000,
