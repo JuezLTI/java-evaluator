@@ -24,6 +24,28 @@ const capabilities = [{
                 needsClassName: true
             }
         }, {
+            id: "Javascript-evaluator",
+            features: [{
+                    name: "language",
+                    value: "javascript",
+                },
+                {
+                    name: "version",
+                    value: "node v16.13.2",
+                },
+                {
+                    name: "engine",
+                    value: "https://nodejs.org/dist/v16.13.2/",
+                },
+            ],
+            programmingFeatures: {
+                compilationProgram: null,
+                extFile: 'js',
+                executionProgram: 'node',
+                executionProgramParameters: [],
+                needsClassName: false
+            }
+        }, {
             id: "Python-evaluator",
             features: [{
                     name: "language",
