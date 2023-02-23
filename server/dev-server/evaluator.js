@@ -118,7 +118,7 @@ async function evalProgramming(programmingExercise, evalReq) {
                             "feedback" : 'Try it again'
                         }
                     }
-                    tests.push(addTest(input, expectedOutput, resultStudent, lastTestError))
+                    tests.push(addTest(input, expectedOutput, resultStudent, lastTestError, metadata))
                 }
 
             } catch (error) {
@@ -226,7 +226,7 @@ const compileCode = (fileName, compilationProgram) => {
     })
 }
 
-const addTest = (input, expectedOutput, obtainedOutput, lastTestError) => {
+const addTest = (input, expectedOutput, obtainedOutput, lastTestError, metadata) => {
     const Diff = require('diff')
     obtainedOutput = obtainedOutput ? obtainedOutput : ''
     const outputDifferences = JSON.stringify(Diff.diffTrimmedLines(expectedOutput, obtainedOutput));
@@ -237,6 +237,7 @@ const addTest = (input, expectedOutput, obtainedOutput, lastTestError) => {
         'outputDifferences': outputDifferences ? outputDifferences : '',
         'classify': getClassify(expectedOutput, obtainedOutput, lastTestError),
         'mark': getGrade(expectedOutput, obtainedOutput),
+        'visible': metadata.visible,
         'feedback': getFeedback(expectedOutput, obtainedOutput),
         'environmentValues': []
     }
