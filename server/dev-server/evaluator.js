@@ -238,7 +238,8 @@ const addTest = (input, expectedOutput, obtainedOutput, lastTestError, metadata)
         'classify': getClassify(expectedOutput, obtainedOutput, lastTestError),
         'mark': getGrade(expectedOutput, obtainedOutput),
         'visible': metadata.visible,
-        'feedback': getFeedback(expectedOutput, obtainedOutput),
+        'hint': metadata.feedback,
+        'feedback': getFeedback(expectedOutput, obtainedOutput, lastTestError),
         'environmentValues': []
     }
 }
@@ -247,13 +248,14 @@ const getGrade = (expectedOutput, obtainedOutput) => {
     return expectedOutput == obtainedOutput ? 100 : 0
 }
 
-const getFeedback = (expectedOutput, obtainedOutput) => {
+const getFeedback = (expectedOutput, obtainedOutput, lastTestError) => {
     let feedback = 'Right Answer.'
     // TODO get feedback from exercise's test
-
-    if(getGrade(expectedOutput, obtainedOutput) < 1)
+    if(lastTestError) {
+        feedback = lastTestError.toString()
+    } else if(getGrade(expectedOutput, obtainedOutput) < 1) {
         feedback = 'Wrong Answer.'
-
+    }
     return feedback
 }
 
