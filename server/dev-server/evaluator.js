@@ -67,7 +67,29 @@ const capabilities = [{
                 executionProgramParameters: [],
                 needsClassName: false
             }
-        },]
+        },{
+            id: "php-evaluator",
+            features: [{
+                    name: "language",
+                    value: "php",
+                },
+                {
+                    name: "version",
+                    value: "php 7.4",
+                },
+                {
+                    name: "engine",
+                    value: "https://php.net/",
+                },
+            ],
+            programmingFeatures: {
+                compilationProgram: null,
+                extFile: 'php',
+                executionProgram: 'php',
+                executionProgramParameters: [],
+                needsClassName: false
+            }
+        }]
 
 async function evalProgramming(programmingExercise, evalReq) {
     return new Promise((resolve) => {
