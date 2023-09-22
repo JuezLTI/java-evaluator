@@ -134,6 +134,8 @@ async function evalProgramming(programmingExercise, evalReq) {
                         .catch(error => {
                             lastTestError = error
                         })
+                        expectedOutput = sanitizeOutputs(expectedOutput)
+                        resultStudent = sanitizeOutputs(resultStudent)
                     if(getGrade(expectedOutput, resultStudent) == 0) {
                         summary = {
                             "classify" : 'Wrong Answer',
@@ -296,6 +298,10 @@ const getClassify = (expectedOutput, obtainedOutput, lastTestError) => {
         }
     }
     return classify
+}
+
+const sanitizeOutputs = (originalOutput) => {
+ return originalOutput.replace(/(?:\r\n|\r|\n)/g, "\n")
 }
 
 const visibilizeWhiteChars = (originalString) => {
