@@ -305,6 +305,8 @@ const sanitizeOutputs = (originalOutput) => {
 }
 
 const visibilizeWhiteChars = (originalString) => {
+    var he = require('he')
+
     const whiteChars = [
         {'in': '\n', 'out': '\u204B\n'},
         {'in': '\t', 'out': '\u2192\t'},
@@ -315,7 +317,7 @@ const visibilizeWhiteChars = (originalString) => {
         let inRegExp = new RegExp(replaceObj.in, 'g')
         replacedString = replacedString.replace(inRegExp, replaceObj.out)
     })
-    return replacedString;
+    return he.encode(replacedString);
 }
 
 const cleanTmpDir = (fileAnswer) => {
