@@ -256,8 +256,8 @@ const addTest = (input, expectedOutput, obtainedOutput, lastTestError, metadata)
     const outputDifferences = JSON.stringify(Diff.diffTrimmedLines(expectedOutput, obtainedOutput));
     return {
         'input': input,
-        'expectedOutput': visibilizeWhiteChars(expectedOutput),
-        'obtainedOutput': visibilizeWhiteChars(obtainedOutput),
+        'expectedOutput': expectedOutput, // visibilizeWhiteChars(expectedOutput),
+        'obtainedOutput': obtainedOutput, // visibilizeWhiteChars(obtainedOutput),
         'outputDifferences': outputDifferences ? outputDifferences : '',
         'classify': getClassify(expectedOutput, obtainedOutput, lastTestError),
         'mark': getGrade(expectedOutput, obtainedOutput),
