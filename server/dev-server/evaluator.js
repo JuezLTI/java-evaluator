@@ -299,8 +299,8 @@ const addTest = (input, expectedOutput, obtainedOutput, lastTestError, metadata)
     const outputDifferences = JSON.stringify(Diff.diffTrimmedLines(expectedOutput, obtainedOutput));
     return {
         'input': input,
-        'expectedOutput': expectedOutput, // visibilizeWhiteChars(expectedOutput),
-        'obtainedOutput': obtainedOutput, // visibilizeWhiteChars(obtainedOutput),
+        'expectedOutput': visibilizeWhiteChars(expectedOutput),
+        'obtainedOutput': visibilizeWhiteChars(obtainedOutput),
         'outputDifferences': outputDifferences ? outputDifferences : '',
         'classify': getClassify(expectedOutput, obtainedOutput, lastTestError),
         'mark': getGrade(expectedOutput, obtainedOutput),
@@ -348,8 +348,6 @@ const sanitizeOutputs = (originalOutput) => {
 }
 
 const visibilizeWhiteChars = (originalString) => {
-    var he = require('he')
-
     const whiteChars = [
         {'in': '\n', 'out': '\u204B\n'},
         {'in': '\t', 'out': '\u2192\t'},
@@ -360,7 +358,7 @@ const visibilizeWhiteChars = (originalString) => {
         let inRegExp = new RegExp(replaceObj.in, 'g')
         replacedString = replacedString.replace(inRegExp, replaceObj.out)
     })
-    return he.encode(replacedString);
+    return replacedString;
 }
 
 const cleanTmpDir = (fileAnswer) => {
