@@ -139,7 +139,7 @@ async function evalProgramming(programmingExercise, evalReq) {
                             lastTestError = error
                         })
                         expectedOutput = sanitizeOutputs(expectedOutput)
-                        resultStudent = sanitizeOutputs(resultStudent)
+                        resultStudent = resultStudent ? sanitizeOutputs(resultStudent) : sanitizeOutputs(lastTestError.toString())
                     if(getGrade(expectedOutput, resultStudent) == 0) {
                         summary = {
                             "classify" : 'Wrong Answer',
