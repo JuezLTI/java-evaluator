@@ -1,17 +1,14 @@
 import express from "express";
 import { loadSchemaYAPEXIL, ProgrammingExercise } from "programming-exercise-juezlti";
 import { loadSchemaPEARL, EvaluationReport } from "evaluation-report-juezlti";
-import dotenv from 'dotenv'
-dotenv.config('../env.js');
 import evaluator from "../evaluator";
 import path from "path";
-import request from "request";
+const axios = require('axios');
 import Cache from "cache";
 const cache = new Cache(600 * 1000); // Create a cache with 600 second TTL
 import fs from "fs";
 
 var router = express.Router();
-
 
 router.get("/capabilities", function(req, res, next) {
     let evalRes = new EvaluationReport();
@@ -49,26 +46,21 @@ router.post("/eval", async function(req, res, next) {
             obj.reply.report.user_id = req.studentID
             req.programming_eval_result = obj;
 
-            request({
-                    method: "POST",
-                    url: process.env.FEEDBACK_MANAGER_URL,
-                    headers: {
-                        Accept: "application/json",
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(req.programming_eval_result)
-                },
-                function(error, response) {
+            try {
+                const response = await axios.post(
+                    process.env.FEEDBACK_MANAGER_URL,
+                    req.programming_eval_result
+                );
+                res.send(response.data);
 
-                    if (error != null || response.statusCode != 200) {
-                        res.json(error).status(500);
-
-                    } else {
-                        let pearlWithFeedback = JSON.parse(response.body)
-                        res.send(pearlWithFeedback);
-                    }
-                }
-            );
+            } catch (error) {
+                console.error('Feedback manager error:', error.message);
+                const statusCode = error.response?.status || 500;
+                res.status(statusCode).json({
+                    error: error.message,
+                    details: error.response?.data
+                });
+            }
         })
         .catch((err) => {
             res.send({ "error": err.message }).status(500);
